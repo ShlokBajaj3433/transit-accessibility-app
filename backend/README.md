@@ -1,4 +1,4 @@
-## API Routes
+f## API Routes
 
 ### Health
 - GET / → API status
@@ -16,3 +16,4 @@
 
 ### User Engagement
 - GET /api/user/{user_id}/stats
+
