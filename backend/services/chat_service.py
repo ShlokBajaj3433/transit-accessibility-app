@@ -222,9 +222,6 @@ Return STRICT JSON only.
 
     # In case Gemini can't be used, attempts to determine if a ramp is present
     def _extract_ramp_bool(self, vision: str) -> Optional[bool]:
-        """
-        Extract Ramp Detected: True/False from vision string.
-        """
         if not vision:
             return None
         m = re.search(r"ramp\s*detected\s*[:=]\s*(true|false)", vision, flags=re.IGNORECASE)
