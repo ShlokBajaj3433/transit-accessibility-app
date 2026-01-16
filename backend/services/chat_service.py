@@ -3,6 +3,7 @@ import os
 import re
 from typing import Any, Dict, Optional
 
+# If running code without the correct dependencies, it will not immediately fail
 try:
     # Loads .env if present
     from dotenv import load_dotenv
@@ -32,13 +33,11 @@ class ChatService:
         self.model_id = os.getenv("GEMINI_MODEL_ID", "gemini-3-pro-preview").strip()
 
         self._client = None
+        # Creates a client if the correct dependencies are installed and an api key is provided
         if genai is not None and self.api_key:
-            # New SDK style: create a client with API key
             self._client = genai.Client(api_key=self.api_key)
 
-    # -------------------------
-    # Job 1: Synthesizer
-    # -------------------------
+    # Synthesizer
     def synthesize(self, transit: str, climate: str, vision: str) -> str:
         """
         Produce a user-friendly sentence combining:
@@ -50,7 +49,7 @@ class ChatService:
         climate = (climate or "").strip()
         vision = (vision or "").strip()
 
-        # Fast fallback if Gemini isn't configured
+        # Simple message if Gemini isn't configured
         if not self._client:
             ramp = self._extract_ramp_bool(vision)
             ramp_msg = "has a wheelchair ramp available" if ramp is True else (
@@ -58,6 +57,7 @@ class ChatService:
             )
             return f"Your trip update: {transit}. Accessibility: this vehicle {ramp_msg}. Climate impact: {climate}."
 
+        # General rules for the Gemini prompt
         system_prompt = (
             "You are an accessibility-first transit assistant. "
             "Write 1–2 friendly, helpful sentences for a rider. "
@@ -68,6 +68,7 @@ class ChatService:
             "Do not output bullet points; output plain text."
         )
 
+        # The actual inputs for the Gemini call
         user_prompt = f"""
 Transit info: {transit}
 Climate info: {climate}
@@ -83,12 +84,11 @@ Return a helpful message for the user.
     def get_chat_response(self, transit: str, climate: str, vision: str) -> str:
         return self.synthesize(transit=transit, climate=climate, vision=vision)
 
-    # -------------------------
-    # Job 2: Interpreter
-    # -------------------------
+    # Interpreter
     def interpret_destination(self, messy_speech_text: str) -> str:
         """
         Convert messy speech-to-text (stutters, partial words) into a clean destination.
+        Requires speech from user to already be converted to text
         Example input: "Un... un... onion... sta... shun."
         Example output: "Union Station"
         """
@@ -96,10 +96,11 @@ Return a helpful message for the user.
         if not raw:
             return ""
 
-        # Fallback heuristic if Gemini isn't configured
+        # Fallback if Gemini isn't configured
         if not self._client:
             return self._heuristic_destination(raw)
 
+        # General rules for the Gemini prompt
         system_prompt = (
             "You decode messy speech-to-text into the intended transit destination. "
             "The user is likely trying to say a place name (station, mall, street, etc.). "
@@ -112,6 +113,7 @@ Return a helpful message for the user.
             "Confidence is 0 to 1. Keep notes short."
         )
 
+        # The actual inputs for the Gemini call
         user_prompt = f"""
 Messy speech-to-text:
 {raw}
@@ -136,9 +138,7 @@ Return STRICT JSON only.
     def interpret_speech(self, messy_speech_text: str) -> str:
         return self.interpret_destination(messy_speech_text)
 
-    # -------------------------
-    # Gemini call helper
-    # -------------------------
+    # Helper to generate Gemini calls
     def _generate_text(self, system_prompt: str, user_prompt: str) -> str:
         """
         Uses Gemini 3 API via google-genai SDK.
@@ -167,9 +167,7 @@ Return STRICT JSON only.
         except Exception:
             return ""
 
-    # -------------------------
-    # Parsing / heuristics
-    # -------------------------
+    # Parsing text
     def _safe_parse_json(self, text: Optional[str]) -> Optional[Any]:
         if not text:
             return None
@@ -192,6 +190,7 @@ Return STRICT JSON only.
                     return None
         return None
 
+    # Incase Gemini returns a call that doesn't conform to the exact specifications
     def _extract_destination_from_text(self, text: Optional[str]) -> str:
         if not text:
             return ""
@@ -207,11 +206,8 @@ Return STRICT JSON only.
             return ""
         return line.strip(' "\'')
 
+    # In case Gemini can't be used, attempts to get a usable result.
     def _heuristic_destination(self, raw: str) -> str:
-        """
-        A very small heuristic to get something usable if Gemini is unavailable.
-        It removes obvious stutter markers and tries to clean to words.
-        """
         cleaned = raw
 
         # Remove ellipses-like repetitions and filler
@@ -224,6 +220,7 @@ Return STRICT JSON only.
         # Title-case as a best effort
         return cleaned.title()
 
+    # In case Gemini can't be used, attempts to determine if a ramp is present
     def _extract_ramp_bool(self, vision: str) -> Optional[bool]:
         """
         Extract Ramp Detected: True/False from vision string.
