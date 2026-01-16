@@ -1,5 +1,5 @@
 # backend/tests/test_chat_service.py
-from chat_service import ChatService
+from backend.services.chat_service import ChatService
 
 class _FakeResponse:
     def __init__(self, text: str):
