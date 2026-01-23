@@ -140,4 +140,18 @@ vite.config.ts.timestamp-*
 
 _pycache_/
 *.pyc
+.env# --- Secrets (Ignored) ---
 .env
+.env.local
+backend/.env
+*.key
+*.pem
+
+# --- System & Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
+.idea/
+.vscode/
