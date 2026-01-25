@@ -1,15 +1,6 @@
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 import { Icon } from 'leaflet'
 
-// Mock data for demonstration
-const mockUserLocation: [number, number] = [40.7128, -74.0060] // New York City
-const mockRoute: [number, number][] = [
-  [40.7128, -74.0060],
-  [40.7180, -74.0020],
-  [40.7230, -73.9980],
-  [40.7280, -73.9940]
-]
-
 // Fix for default marker icon in react-leaflet
 const createCustomIcon = (color: string) => {
   return new Icon({
@@ -27,13 +18,15 @@ const destinationIcon = createCustomIcon('red')
 
 interface MapViewProps {
   className?: string
+  userLocation: [number, number]
+  routePath: [number, number][]
 }
 
-function MapView({ className = '' }: MapViewProps) {
+function MapView({ className = '', userLocation, routePath }: MapViewProps) {
   return (
     <div className={`relative ${className}`}>
       <MapContainer
-        center={mockUserLocation}
+        center={userLocation}
         zoom={13}
         className="h-full w-full"
         whenReady={() => {
@@ -48,7 +41,7 @@ function MapView({ className = '' }: MapViewProps) {
         />
         
         {/* User location marker */}
-        <Marker position={mockUserLocation} icon={userIcon}>
+        <Marker position={userLocation} icon={userIcon}>
           <Popup>
             <div className="text-sm">
               <strong>Your Location</strong>
@@ -58,7 +51,7 @@ function MapView({ className = '' }: MapViewProps) {
         </Marker>
 
         {/* Destination marker */}
-        <Marker position={mockRoute[mockRoute.length - 1]} icon={destinationIcon}>
+        <Marker position={routePath[routePath.length - 1]} icon={destinationIcon}>
           <Popup>
             <div className="text-sm">
               <strong>Destination</strong>
@@ -69,7 +62,7 @@ function MapView({ className = '' }: MapViewProps) {
 
         {/* Route polyline */}
         <Polyline
-          positions={mockRoute}
+          positions={routePath}
           color="#3b82f6"
           weight={4}
           opacity={0.7}
