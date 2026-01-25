@@ -1,3 +1,14 @@
+feature/map-page-skeleton
+export default function MapView() {
+  return (
+    <div className="h-full w-full bg-gray-200 flex items-center justify-center">
+      <p className="text-gray-700 text-sm">
+        Map placeholder (integration coming next)
+      </p>
+    </div>
+  );
+}
+=======
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
 import { Icon } from 'leaflet'
 
@@ -73,3 +84,4 @@ function MapView({ className = '', userLocation, routePath }: MapViewProps) {
 }
 
 export default MapView
+main
