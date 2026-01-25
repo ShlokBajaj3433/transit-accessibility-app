@@ -8,7 +8,11 @@ function Home() {
           Transit Accessibility App
         </h1>
         <p className="text-lg text-gray-600 mb-8">
+feature/map-page-skeleton
           Frontend is ready
+=======
+          Helping people with disabilities navigate public transport safely
+main
         </p>
         <Link 
           to="/map"
