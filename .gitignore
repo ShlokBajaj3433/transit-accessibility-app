@@ -155,3 +155,7 @@ venv/
 .DS_Store
 .idea/
 .vscode/
+
+# --- Local SQLite DB (do not commit) ---
+backend/data/
+*.db
