@@ -1,42 +1,56 @@
-# backend/services/climate_service.py
+from typing import Optional, Dict, Any
+
 
 class ClimateEngine:
     def __init__(self):
-        # Emission factors (kg CO2 per km)
-        # Source: EPA / UK DEFRA average factors
-        self.EMISSION_CAR = 0.171  # Average passenger car
-        self.EMISSION_BUS = 0.089  # Average local bus (per passenger approx)
+        # Emission factors (kg CO2 per km) - direct tailpipe style estimates
+        self.EMISSION_CAR = 0.171
+        self.EMISSION_BUS = 0.089
         self.EMISSION_WALK = 0.0
         self.EMISSION_BIKE = 0.0
 
-    def calculate_savings(self, distance_km: float, mode: str):
+        # Electric-mode energy intensity (kWh per passenger-km) - conservative demo default.
+        # Tune later with local transit assumptions.
+        self.ELECTRIC_KWH_PER_KM = 0.05
+
+        # If we don't have live carbon intensity, use a mild default (gCO2/kWh).
+        self.DEFAULT_GRID_GCO2_PER_KWH = 150.0
+
+    def _electric_emissions_kg(self, distance_km: float, carbon_gco2_per_kwh: Optional[float]) -> float:
+        ci = float(carbon_gco2_per_kwh) if carbon_gco2_per_kwh is not None else self.DEFAULT_GRID_GCO2_PER_KWH
+        kwh = distance_km * self.ELECTRIC_KWH_PER_KM
+        return (kwh * ci) / 1000.0  # g -> kg
+
+    def calculate_savings(
+        self,
+        distance_km: float,
+        mode: str,
+        carbon_gco2_per_kwh: Optional[float] = None
+    ) -> Dict[str, Any]:
         """
         Calculates kg of CO2 saved by NOT driving a car.
-        Returns:
-            dict: { "co2_saved_kg": float, "points_earned": int }
+        Adds optional carbon intensity for electric modes (subway/skytrain-like).
         """
-        # 1. Calculate what the emissions WOULD be if they drove
+        mode_l = (mode or "").lower().strip()
+
         baseline_emissions = distance_km * self.EMISSION_CAR
 
-        # 2. Calculate actual emissions based on mode
-        if mode.lower() == "bus":
+        if mode_l == "bus":
             actual_emissions = distance_km * self.EMISSION_BUS
-        elif mode.lower() in ["walk", "bike", "subway"]:
-            # Subway is often considered near-zero at point of use,
-            # or significantly lower than bus. For MVP, we treat as very low.
-            actual_emissions = 0.02 * distance_km
+        elif mode_l in ["walk", "bike"]:
+            actual_emissions = 0.0
+        elif mode_l in ["subway", "train", "skytrain", "electric"]:
+            actual_emissions = self._electric_emissions_kg(distance_km, carbon_gco2_per_kwh)
+        elif mode_l == "car":
+            actual_emissions = baseline_emissions
         else:
-            # Default to car emissions if unknown mode
+            # unknown mode -> assume car
             actual_emissions = baseline_emissions
 
-        # 3. Calculate Savings
         saved_kg = baseline_emissions - actual_emissions
-
-        # Ensure we don't return negative savings (e.g. if bus was somehow worse)
         if saved_kg < 0:
             saved_kg = 0.0
 
-        # 4. Gamification: 100 points per 1 kg of CO2 saved
         points = int(saved_kg * 100)
 
         return {
@@ -45,18 +59,6 @@ class ClimateEngine:
             "baseline_car_kg": round(baseline_emissions, 3),
             "actual_kg": round(actual_emissions, 3),
             "co2_saved_kg": round(saved_kg, 3),
-            "points_earned": points
+            "points_earned": points,
+            "carbon_intensity_gco2_per_kwh": None if carbon_gco2_per_kwh is None else round(float(carbon_gco2_per_kwh), 2),
         }
-
-
-# Simple test to run this file directly
-if __name__ == "__main__":
-    engine = ClimateEngine()
-
-    # Test Scenario: 5km Bus ride
-    result = engine.calculate_savings(distance_km=5.0, mode="bus")
-    print(f"Bus Trip Results: {result}")
-
-    # Test Scenario: 2km Walk
-    result_walk = engine.calculate_savings(distance_km=2.0, mode="walk")
-    print(f"Walk Trip Results: {result_walk}")
