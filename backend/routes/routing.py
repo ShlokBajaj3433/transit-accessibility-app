@@ -1,65 +1,45 @@
-# backend/routes/routing.py
-# Route planning endpoints
-
 from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
+
+from backend.services.emissions_service import EmissionsService
+from backend.services.electricity_maps_service import ElectricityMapsService
 
 router = APIRouter(prefix="/api", tags=["Route Planning"])
 
+_emit = EmissionsService()
+_emaps = ElectricityMapsService()
 
-# Pydantic Models
 
 class RouteOption(BaseModel):
-    """Model for a single transit route option"""
     route_id: str
     origin: str
     destination: str
     mode: str
     estimated_time_minutes: int
     stops_count: int
-    accessibility_score: float = Field(..., ge=0, le=100, description="0-100 accessibility rating")
+    accessibility_score: float = Field(..., ge=0, le=100)
     has_elevator: bool
     wheelchair_accessible: bool
     audio_assistance_available: bool
 
+    # New (optional) climate fields
+    estimated_co2_kg: Optional[float] = None
+    co2_saved_vs_car_kg: Optional[float] = None
+    carbon_intensity_gco2_per_kwh: Optional[float] = None
 
-# Routes
 
 @router.post("/route/plan", response_model=List[RouteOption])
 async def plan_accessible_route(
-    origin: str = Query(..., description="Starting location"),
-    destination: str = Query(..., description="Destination location"),
-    accessibility_priority: Optional[str] = Query(
-        "balanced",
-        description="'accessibility' or 'time' - determines route optimization"
-    )
+    origin: str = Query(...),
+    destination: str = Query(...),
+    accessibility_priority: Optional[str] = Query("balanced", description="'accessibility' or 'time'"),
+    optimize: Optional[str] = Query("balanced", description="'balanced' | 'time' | 'accessibility' | 'emissions'"),
+    lat: Optional[float] = Query(None, description="Latitude (for live carbon intensity)"),
+    lon: Optional[float] = Query(None, description="Longitude (for live carbon intensity)"),
 ):
-    """
-    Plan a transit route with accessibility considerations
-    
-    **Functionality:**
-    - Generates multiple route options for origin to destination
-    - Prioritizes accessibility features (elevators, wheelchair access, audio guides)
-    - Considers user's accessibility needs
-    - Provides real-time transit information
-    
-    **Parameters:**
-    - origin: Starting location/address
-    - destination: End location/address
-    - accessibility_priority: 'accessibility' (default) or 'time'
-    
-    **Returns:**
-    - List of route options with:
-      - Estimated travel time
-      - Accessibility scores (0-100)
-      - Available accessibility features
-      - Number of stops
-    
-    **Note:** Currently returns mock data. To be integrated with transit APIs.
-    """
-    # TODO: Integrate with transit routing engine (GTFS, Google Transit API, etc.)
-    mock_routes = [
+    # Mock routes (existing behavior)
+    routes = [
         RouteOption(
             route_id="route_001",
             origin=origin,
@@ -85,5 +65,30 @@ async def plan_accessible_route(
             audio_assistance_available=False
         )
     ]
-    
-    return mock_routes
+
+    # Step 5: pull live carbon intensity if provided
+    carbon_intensity = None
+    if lat is not None and lon is not None:
+        latest = _emaps.latest_carbon_intensity(lat=lat, lon=lon)
+        if isinstance(latest, dict):
+            carbon_intensity = latest.get("carbonIntensity") or latest.get("carbon_intensity") or latest.get("value")
+            try:
+                carbon_intensity = float(carbon_intensity) if carbon_intensity is not None else None
+            except Exception:
+                carbon_intensity = None
+
+    # Attach emissions to each route
+    enriched: List[RouteOption] = []
+    for r in routes:
+        est = _emit.estimate_route_emissions(r.mode, r.estimated_time_minutes, carbon_gco2_per_kwh=carbon_intensity)
+        r.estimated_co2_kg = est["actual_kg"]
+        r.co2_saved_vs_car_kg = est["co2_saved_kg"]
+        r.carbon_intensity_gco2_per_kwh = est.get("carbon_intensity_gco2_per_kwh")
+        enriched.append(r)
+
+    # Part 1.2: optimize by least pollution if requested
+    if (optimize or "").lower() == "emissions":
+        enriched.sort(key=lambda x: (x.estimated_co2_kg if x.estimated_co2_kg is not None else 1e9))
+
+    # Keep your existing accessibility_priority behavior (stubbed)
+    return enriched
