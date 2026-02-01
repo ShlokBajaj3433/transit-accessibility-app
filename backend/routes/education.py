@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query
-from backend.services.climate_education_service import ClimateEducationService
+from services.climate_education_service import ClimateEducationService
 
 router = APIRouter(prefix="/api/climate", tags=["Climate (Education)"])
 _edu = ClimateEducationService()

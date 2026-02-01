@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 from typing import List, Optional
 
-from backend.services.climate_hazards_service import ClimateHazardsService
+from services.climate_hazards_service import ClimateHazardsService
 
 router = APIRouter(prefix="/api/climate", tags=["Climate (Hazards)"])
 _haz = ClimateHazardsService()

@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from backend.services.climate_service import ClimateEngine
+from services.climate_service import ClimateEngine
 
 
 class EmissionsService:

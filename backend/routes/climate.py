@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any, Dict
 
-from backend.services.climate_service import ClimateEngine
-from backend.services.electricity_maps_service import ElectricityMapsService
+from services.climate_service import ClimateEngine
+from services.electricity_maps_service import ElectricityMapsService
 
 router = APIRouter(prefix="/api", tags=["Impact Tracking"])
 

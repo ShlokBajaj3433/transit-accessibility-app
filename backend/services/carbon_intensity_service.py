@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional, Dict, Any
 from datetime import datetime, timezone
 
-from backend.services.electricity_maps_service import ElectricityMapsService
+from services.electricity_maps_service import ElectricityMapsService
 
 DB_DIR = Path(__file__).resolve().parents[1] / "data"
 DB_PATH = DB_DIR / "carbon_intensity.db"

@@ -2,8 +2,8 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 from typing import Optional, List, Any, Dict
 
-from backend.services.emissions_service import EmissionsService
-from backend.services.electricity_maps_service import ElectricityMapsService
+from services.emissions_service import EmissionsService
+from services.electricity_maps_service import ElectricityMapsService
 
 router = APIRouter(prefix="/api", tags=["Route Planning"])
 

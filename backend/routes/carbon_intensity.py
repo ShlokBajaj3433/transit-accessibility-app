@@ -2,7 +2,7 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
-from backend.services.carbon_intensity_service import init_db, lowest_intensity_times, live_latest_intensity, live_recommend_times
+from services.carbon_intensity_service import init_db, lowest_intensity_times, live_latest_intensity, live_recommend_times
 
 router = APIRouter(prefix="/api/climate", tags=["Climate (Carbon Intensity)"])
 
