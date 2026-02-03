@@ -216,17 +216,4 @@ const Home = () => {
   );
 };
 
-export default Home;                       </>
-                                ) : (
-                                    <div className="no-results-msg">No routes found for this transport type.</div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
-        </div>
-    );
-};
-
 export default Home;
