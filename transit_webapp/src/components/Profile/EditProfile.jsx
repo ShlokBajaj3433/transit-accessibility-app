@@ -13,14 +13,14 @@ const EditProfile = () => {
                     <ArrowLeft size={24} color="#343A40" />
                 </button>
                 <span className="header-title">Welcome, Chuba!</span>
-                <button className="icon-btn-ghost" onClick={() => navigate('/notifications')}>
+                <button className="icon-btn-ghost">
                     <Bell size={24} color="#343A40" />
                 </button>
             </div>
 
             <div className="profile-content">
                 <div className="profile-section-title">
-                    <h2 style={{ fontSize: '20px', fontWeight: '700', margin: '20px 0 4px 0' }}>Edit Profile</h2>
+                    <h2 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 4px 0' }}>Edit Profile</h2>
                     <p style={{ fontSize: '14px', color: '#6C757D', margin: 0 }}>Edit your account details</p>
                 </div>
 

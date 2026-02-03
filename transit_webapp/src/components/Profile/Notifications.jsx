@@ -46,7 +46,7 @@ const Notifications = () => {
     return (
         <div className="notifications-screen screen">
             {/* Header */}
-            <div className="profile-header" style={{ position: 'sticky', top: 0, background: '#EAEAEA'}}>
+            <div className="profile-header" style={{ position: 'sticky', top: 0, background: '#F8F9FA' }}>
                 <button className="icon-btn-ghost" onClick={() => navigate(-1)}>
                     <ArrowLeft size={24} color="#343A40" />
                 </button>
@@ -54,7 +54,7 @@ const Notifications = () => {
                 <div style={{ width: 24 }}></div>
             </div>
 
-            <div className="notifications-content" style={{ padding: '0 24px 80px', marginTop: '16px'}}>
+            <div className="notifications-content" style={{ padding: '0 24px 80px' }}>
                 <div className="notification-date-label">Today</div>
                 {notifications.map(notif => (
                     <div key={notif.id} className="notification-card">

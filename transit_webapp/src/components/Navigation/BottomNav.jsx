@@ -1,10 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Map, Gamepad2, User, Accessibility } from 'lucide-react';
+import { Home, Map, Gamepad2, User } from 'lucide-react';
 
-const BottomNav = ({ onDisabilityClick }) => {
+const BottomNav = () => {
     return (
-        <div className="bottom-nav" style={{ position: 'relative' }}>
+        <div className="bottom-nav">
             <NavLink to="/home" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                 <Home size={24} />
                 <span>Home</span>
@@ -12,36 +12,6 @@ const BottomNav = ({ onDisabilityClick }) => {
             <NavLink to="/trips" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                 <Map size={24} />
                 <span>My Trips</span>
-            </NavLink>
-            
-            {/* Floating Disability Mode Button */}
-            <button 
-                className="disability-mode-button"
-                style={{
-                    position: 'absolute',
-                    top: '-30px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '64px',
-                    height: '64px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ff0000',
-                    border: '4px solid #FFFFFF',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 12px rgba(255, 0, 0, 0.4)',
-                    cursor: 'pointer',
-                    zIndex: 9999,
-                }}
-                onClick={onDisabilityClick}
-            >
-                <Accessibility size={32} color="#FFFFFF" />
-            </button>
-            
-            <NavLink to="/disability" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                <Map size={24} />
-                <span>Disability</span>
             </NavLink>
             <NavLink to="/games" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                 <Gamepad2 size={24} />

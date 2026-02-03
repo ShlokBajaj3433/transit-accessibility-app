@@ -9,14 +9,12 @@ import VerifyDisability from './components/Auth/VerifyDisability';
 
 // Dashboard Components
 import Home from './components/Dashboard/Home';
-import SearchRoute from './components/Dashboard/SearchRoute';
 
 // Transit Components
 import TransitSearch from './components/Transit/TransitSearch';
 
 // Journey Components
 import JourneyDetails from './components/Journey/JourneyDetails';
-import JourneyDetails2 from './components/Journey/JourneyDetails2';
 import ActiveTrip from './components/Journey/ActiveTrip';
 
 // Profile Components
@@ -28,6 +26,7 @@ import MyTrips from './components/Trips/MyTrips';
 // Navigation Components
 import BottomNav from './components/Navigation/BottomNav';
 import DisabilityFAB from './components/Navigation/DisabilityFAB';
+import Sidebar from './components/Navigation/Sidebar';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, isLoggedIn }) => {
@@ -87,19 +86,9 @@ function App() {
                             <TransitSearch />
                         </ProtectedRoute>
                     } />
-                    <Route path="/searchroute" element={
-                        <ProtectedRoute isLoggedIn={isLoggedIn}>
-                            <SearchRoute />
-                        </ProtectedRoute>
-                    } />
                     <Route path="/journey-details" element={
                         <ProtectedRoute isLoggedIn={isLoggedIn}>
                             <JourneyDetails />
-                        </ProtectedRoute>
-                    } />
-                    <Route path="/journey-details-2" element={
-                        <ProtectedRoute isLoggedIn={isLoggedIn}>
-                            <JourneyDetails2 />
                         </ProtectedRoute>
                     } />
                     <Route path="/active-trip" element={
@@ -144,22 +133,12 @@ function App() {
                     } />
                 </Routes>
 
-                {/* Show Bottom Nav and Sidebar only if logged in and not on auth pages */}
+                {/* Show Bottom Nav, FAB, and Sidebar only if logged in and not on auth pages */}
                 {isLoggedIn && !['/login', '/register'].includes(window.location.pathname) && (
                     <>
-                        {/* Fixed Bottom Nav Container */}
-                        <div style={{
-                            position: 'fixed',
-                            bottom: 0,
-                            left: 0,
-                            right: 0,
-                            zIndex: 100,
-                            pointerEvents: 'none'
-                        }}>
-                            <div style={{ pointerEvents: 'auto' }}>
-                                <BottomNav onDisabilityClick={() => setIsDisabilityModalOpen(true)} />
-                            </div>
-                        </div>
+                        <Sidebar />
+                        <BottomNav />
+                        <DisabilityFAB onOpen={() => setIsDisabilityModalOpen(true)} />
                     </>
                 )}
 

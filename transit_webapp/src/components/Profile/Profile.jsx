@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Bell, Edit2, Mail, User, Phone, Leaf, LogOut, Settings } from 'lucide-react';
+import { ArrowLeft, Bell, Edit2, Mail, User, Phone, Leaf, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Profile = ({ onLogout }) => {
@@ -20,7 +20,7 @@ const Profile = ({ onLogout }) => {
 
             <div className="profile-content">
                 <div className="profile-section-title">
-                    <h2 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 4px 0' , marginTop: '20px' }}>Profile</h2>
+                    <h2 style={{ fontSize: '20px', fontWeight: '700', margin: '0 0 4px 0' }}>Profile</h2>
                     <p style={{ fontSize: '14px', color: '#6C757D', margin: 0 }}>Manage your account</p>
                 </div>
 
@@ -46,7 +46,7 @@ const Profile = ({ onLogout }) => {
                 {/* Account Details Card */}
                 <div className="account-details-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h4 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>Account Details</h4>
+                        <h4 style={{ fontSize: '16px', fontWeight: '700', margin: 0 }}>Account Details</h4>
                         <button
                             className="edit-link-btn"
                             onClick={() => navigate('/profile/edit')}
@@ -81,62 +81,8 @@ const Profile = ({ onLogout }) => {
                     </div>
                 </div>
 
-                {/* Impact Summary Card */}
-                <div style={{
-                    backgroundColor: '#2B7FFF',
-                    borderRadius: '16px',
-                    padding: '16px',
-                    color: '#FFFFFF',
-                    boxShadow: '0 8px 20px rgba(0, 0, 0, 0.12)',
-                    marginBottom: '20px'
-                }}>
-                    <div style={{ fontSize: '16px', fontWeight: '400', marginBottom: '12px' }}>Your Impact</div>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gap: '12px'
-                    }}>
-                        <div style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                            borderRadius: '12px',
-                            padding: '12px'
-                        }}>
-                            <div style={{ fontSize: '20px', fontWeight: '400', marginBottom: '4px' }}>47.3 kg</div>
-                            <div style={{ fontSize: '12px', opacity: 0.9 }}>Total CO₂ Saved</div>
-                        </div>
-                        <div style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                            borderRadius: '12px',
-                            padding: '12px'
-                        }}>
-                            <div style={{ fontSize: '20px', fontWeight: '400', marginBottom: '4px' }}>2.1</div>
-                            <div style={{ fontSize: '12px', opacity: 0.9 }}>Trees Equivalent</div>
-                        </div>
-                        <div style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                            borderRadius: '12px',
-                            padding: '12px'
-                        }}>
-                            <div style={{ fontSize: '20px', fontWeight: '400', marginBottom: '4px' }}>142 mi</div>
-                            <div style={{ fontSize: '12px', opacity: 0.9 }}>Eco Distance</div>
-                        </div>
-                        <div style={{
-                            backgroundColor: 'rgba(255, 255, 255, 0.18)',
-                            borderRadius: '12px',
-                            padding: '12px'
-                        }}>
-                            <div style={{ fontSize: '20px', fontWeight: '400', marginBottom: '4px' }}>38</div>
-                            <div style={{ fontSize: '12px', opacity: 0.9 }}>Eco Trips</div>
-                        </div>
-                    </div>
-                </div>
-
                 {/* Logout Button */}
                 <div className="logout-section">
-                    <button className="settings-btn" onClick={() => navigate('/profile/edit')}>
-                        <Settings size={20} />
-                        <span>Settings</span>
-                    </button>
                     <button className="logout-btn" onClick={() => {
                         onLogout();
                         navigate('/login');
