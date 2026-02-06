@@ -23,7 +23,7 @@ except ImportError:
     pass  # dotenv is optional
 
 # Import routers from route modules
-from routes import health, climate, accessibility, routing, users, carbon_intensity, hazards, education
+from routes import health, climate, accessibility, routing, users, carbon_intensity, hazards, education, maps
 
 # Import services for controller logic
 from services.chat_service import ChatService
@@ -79,6 +79,8 @@ app.include_router(carbon_intensity.router)
 app.include_router(hazards.router)
 
 app.include_router(education.router)
+
+app.include_router(maps.router)
 
 # ============================================================
 # AI-Powered Endpoints (Vision & Chat Services)
