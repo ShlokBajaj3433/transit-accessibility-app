@@ -5,6 +5,7 @@ import { ArrowLeft, Bell, MapPin, ArrowRight, Menu, Bus, Train, TrainFront, Chev
 import RouteCard from '../Transit/RouteCard';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OSRMMap from '../Map/OSRMMap';
+import { buildURL, API_CONFIG } from '../../config/api';
 
 const SearchRoute = () => {
     const navigate = useNavigate();
@@ -120,7 +121,8 @@ const SearchRoute = () => {
         setIsSearching(true);
         try {
             console.log('Searching for:', query);
-            const response = await fetch(`http://localhost:8000/api/maps/geocode?q=${encodeURIComponent(query)}&limit=5`);
+            const url = buildURL(API_CONFIG.maps.geocode, { q: query, limit: 5 });
+            const response = await fetch(url);
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

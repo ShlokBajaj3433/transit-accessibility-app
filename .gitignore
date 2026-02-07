@@ -159,3 +159,8 @@ venv/
 # --- Local SQLite DB (do not commit) ---
 backend/data/
 *.db
+HOME_PAGE_INTEGRATION.md
+INTEGRATION_GUIDE.md
+QUICK_START_INTEGRATION.md
+MAP_CONNECTION_FLOW.md
+CONNECTED_FEATURES.md

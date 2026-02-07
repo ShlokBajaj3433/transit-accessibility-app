@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import WeatherCard from './WeatherCard';
 import CO2Card from './CO2Card';
 import { Bell, MapPin, Menu, Bus, Train, TrainFront, ChevronDown, Star, Search } from 'lucide-react';
@@ -6,6 +6,7 @@ import RouteCard from '../Transit/RouteCard';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../Navigation/Sidebar';
 import OSRMMap from '../Map/OSRMMap';
+import { routeService } from '../../services/routeService';
 
 const Home = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -13,9 +14,71 @@ const Home = () => {
     const [activeTab, setActiveTab] = useState('bus');
     const [activeFilters, setActiveFilters] = useState(['accessible']);
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [routes, setRoutes] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    // Mock routes data
-    const routes = [
+    // Fetch routes from backend when component mounts or when search changes
+    useEffect(() => {
+        const fetchRoutes = async () => {
+            if (!homeSearchQuery) {
+                // Use default mock routes if no search query
+                setRoutes(getDefaultRoutes());
+                return;
+            }
+
+            setLoading(true);
+            try {
+                // Get user location for carbon intensity
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        const { latitude, longitude } = position.coords;
+                        
+                        const backendRoutes = await routeService.planRoute({
+                            origin: 'Current Location',
+                            destination: homeSearchQuery,
+                            accessibility_priority: 'balanced',
+                            optimize: 'balanced',
+                            lat: latitude,
+                            lon: longitude
+                        });
+
+                        // Transform backend routes to match frontend format
+                        const transformedRoutes = backendRoutes.map((route, index) => ({
+                            id: index + 1,
+                            type: route.mode,
+                            recommended: route.accessibility_score > 90,
+                            station: route.destination,
+                            distance: `${(route.estimated_time_minutes * 0.5).toFixed(1)} km`,
+                            duration: `${route.estimated_time_minutes} mins`,
+                            arrivalTime: calculateArrivalTime(route.estimated_time_minutes),
+                            cost: calculateCost(route.mode, route.estimated_time_minutes),
+                            co2: route.estimated_co2_kg ? `${Math.round(route.estimated_co2_kg * 1000)}g` : '0g',
+                            co2Label: 'Save CO₂',
+                            badge: getBadgeForScore(route.accessibility_score),
+                            tags: getRouteTags(route),
+                            envAlert: getEnvAlert(route)
+                        }));
+
+                        setRoutes(transformedRoutes);
+                    },
+                    (error) => {
+                        console.log('Geolocation error:', error);
+                        setRoutes(getDefaultRoutes());
+                    }
+                );
+            } catch (error) {
+                console.error('Failed to fetch routes:', error);
+                setRoutes(getDefaultRoutes());
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRoutes();
+    }, [homeSearchQuery]);
+
+    // Helper functions
+    const getDefaultRoutes = () => [
         {
             id: 1,
             type: 'bus',
@@ -77,6 +140,43 @@ const Home = () => {
             envAlert: 'Lowest emissions option available.'
         }
     ];
+
+    const calculateArrivalTime = (minutes) => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + minutes);
+        return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    };
+
+    const calculateCost = (mode, minutes) => {
+        const baseCosts = { bus: 1.5, subway: 2.0, train: 2.0, mrt: 2.5 };
+        const cost = (baseCosts[mode] || 1.5) + (minutes / 60);
+        return `$${cost.toFixed(2)}`;
+    };
+
+    const getBadgeForScore = (score) => {
+        if (score >= 95) return { type: 'excellent', text: 'Excellent' };
+        if (score >= 85) return { type: 'good', text: 'Good' };
+        if (score >= 70) return { type: 'moderate', text: 'Moderate' };
+        return { type: 'bad', text: 'Limited' };
+    };
+
+    const getRouteTags = (route) => {
+        const tags = [];
+        if (route.wheelchair_accessible) tags.push('Accessible');
+        if (route.has_elevator) tags.push('Elevator');
+        if (route.audio_assistance_available) tags.push('Audio Aid');
+        if (route.estimated_co2_kg && route.estimated_co2_kg < 0.2) tags.push('Climate Friendly');
+        return tags;
+    };
+
+    const getEnvAlert = (route) => {
+        if (route.co2_saved_vs_car_kg > 5) {
+            return `This route saves ${route.co2_saved_vs_car_kg.toFixed(1)}kg CO₂ compared to driving!`;
+        } else if (route.carbon_intensity_gco2_per_kwh && route.carbon_intensity_gco2_per_kwh < 150) {
+            return 'Low carbon intensity - great time to travel!';
+        }
+        return 'Eco-friendly transit option.';
+    };
 
     const filteredRoutes = routes.filter(r => r.type === activeTab);
     const navigate = useNavigate();
