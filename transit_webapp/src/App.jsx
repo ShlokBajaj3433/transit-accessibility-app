@@ -28,7 +28,9 @@ import MyTrips from './components/Trips/MyTrips';
 
 // Navigation Components
 import BottomNav from './components/Navigation/BottomNav';
-import DisabilityFAB from './components/Navigation/DisabilityFAB';
+
+// Voice Assistant Component
+import VoiceAssistant from './components/VoiceAssistant/VoiceAssistant';
 
 
 // Protected Route Component
@@ -141,9 +143,16 @@ function App() {
                             <Games />
                         </ProtectedRoute>
                     } />
+                    
+                    {/* Voice Assistant Route for Blind Mode (Protected) */}
+                    <Route path="/voice-assistant" element={
+                        <ProtectedRoute isLoggedIn={isLoggedIn}>
+                            <VoiceAssistant />
+                        </ProtectedRoute>
+                    } />
                 </Routes>
 
-                {/* Show Bottom Nav and Sidebar only if logged in and not on auth pages */}
+                {/* Show Bottom Nav only if logged in and not on auth pages */}
                 {isLoggedIn && !['/login', '/register'].includes(window.location.pathname) && (
                     <>
                         {/* Fixed Bottom Nav Container */}
@@ -157,9 +166,6 @@ function App() {
                         }}>
                             <div style={{ pointerEvents: 'auto' }}>
                                 <BottomNav onDisabilityClick={() => setIsDisabilityModalOpen(true)} />
-                            </div>
-                            <div style={{ pointerEvents: 'auto' }}>
-                                <DisabilityFAB onOpen={() => setIsDisabilityModalOpen(true)} />
                             </div>
                         </div>
                     </>

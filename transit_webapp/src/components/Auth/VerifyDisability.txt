@@ -1,10 +1,8 @@
 import React from 'react';
 import { X, Mic, EyeOff, MessageSquareOff, EarOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 
 const VerifyDisability = ({ isOpen, onClose }) => {
-    const navigate = useNavigate();
     const [step, setStep] = React.useState('VERIFY'); // VERIFY, SARA_INTRO, USER_SPEAKING, SARA_DESTINATION
 
     // TTS Helper
@@ -48,15 +46,8 @@ const VerifyDisability = ({ isOpen, onClose }) => {
 
     if (!isOpen) return null;
 
-    const handleDisabilitySelect = (disabilityType) => {
-        if (disabilityType === 'visual') {
-            // Navigate to Voice Assistant for blind mode
-            onClose();
-            navigate('/voice-assistant');
-        } else {
-            // For other disabilities, continue with current flow
-            setStep('SARA_INTRO');
-        }
+    const handleDisabilitySelect = () => {
+        setStep('SARA_INTRO');
     };
 
     const handleNextStep = () => {
@@ -93,17 +84,17 @@ const VerifyDisability = ({ isOpen, onClose }) => {
                                 </div>
                             </div>
                             <div className="disability-options-row">
-                                <div className="disability-option-btn-container" onClick={() => handleDisabilitySelect('visual')}>
+                                <div className="disability-option-btn-container" onClick={handleDisabilitySelect}>
                                     <button className="disability-circle-btn visual">
                                         <EyeOff size={28} color="black" />
                                     </button>
                                 </div>
-                                <div className="disability-option-btn-container" onClick={() => handleDisabilitySelect('speech')}>
+                                <div className="disability-option-btn-container" onClick={handleDisabilitySelect}>
                                     <button className="disability-circle-btn speech">
                                         <MessageSquareOff size={28} color="black" />
                                     </button>
                                 </div>
-                                <div className="disability-option-btn-container" onClick={() => handleDisabilitySelect('hearing')}>
+                                <div className="disability-option-btn-container" onClick={handleDisabilitySelect}>
                                     <button className="disability-circle-btn hearing">
                                         <EarOff size={28} color="black" />
                                     </button>

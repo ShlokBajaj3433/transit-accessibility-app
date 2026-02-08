@@ -421,29 +421,7 @@ body {
   color: var(--primary-navy);
 }
 
-/* FAB */
-.disability-fab {
-  position: fixed;
-  bottom: 90px;
-  right: 24px;
-  width: 56px;
-  height: 56px;
-  background-color: #ff0000;
-  color: var(--white);
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 99;
-  transition: all 0.3s;
-}
 
-.disability-fab:hover {
-  transform: scale(1.05);
-}
 
 /* Map Container */
 .map-container {
