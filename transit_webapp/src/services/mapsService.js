@@ -1,13 +1,12 @@
 // Frontend service to connect to OSRM backend
-const API_BASE = 'http://localhost:8000'; // Adjust to your backend URL
+import { API_CONFIG, buildURL, apiFetch } from '../config/api';
 
 export const mapsService = {
   // Geocode a location using Nominatim via your backend
   async geocode(query, limit = 5) {
     try {
-      const response = await fetch(`${API_BASE}/api/maps/geocode?q=${encodeURIComponent(query)}&limit=${limit}`);
-      if (!response.ok) throw new Error('Geocoding failed');
-      return await response.json();
+      const url = buildURL(API_CONFIG.maps.geocode, { q: query, limit });
+      return await apiFetch(url);
     } catch (error) {
       console.error('Geocoding error:', error);
       // Return mock data for Kuala Lumpur if backend unavailable
@@ -26,11 +25,14 @@ export const mapsService = {
   // Get route between two points using OSRM via your backend
   async getRoute(originLat, originLon, destLat, destLon, profile = 'foot') {
     try {
-      const response = await fetch(
-        `${API_BASE}/api/maps/route?origin_lat=${originLat}&origin_lon=${originLon}&dest_lat=${destLat}&dest_lon=${destLon}&profile=${profile}`
-      );
-      if (!response.ok) throw new Error('Routing failed');
-      return await response.json();
+      const url = buildURL(API_CONFIG.maps.route, {
+        origin_lat: originLat,
+        origin_lon: originLon,
+        dest_lat: destLat,
+        dest_lon: destLon,
+        profile
+      });
+      return await apiFetch(url);
     } catch (error) {
       console.error('Routing error:', error);
       // Return mock route if backend unavailable

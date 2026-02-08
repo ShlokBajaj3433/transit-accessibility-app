@@ -3,6 +3,8 @@ import { ArrowLeft, Bell, MapPin, Menu, Bus, Train, TrainFront, ChevronDown, Loc
 import RouteCard from '../Transit/RouteCard';
 import { useNavigate, useLocation } from 'react-router-dom';
 import OSRMMap from '../Map/OSRMMap';
+import { buildURL, API_CONFIG } from '../../config/api';
+import { routeService } from '../../services/routeService';
 
 const SearchRoute = () => {
     const navigate = useNavigate();
@@ -20,7 +22,13 @@ const SearchRoute = () => {
     const [selectedDepartOption, setSelectedDepartOption] = useState('Depart Now');
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
     const [showRecommendation, setShowRecommendation] = useState(false);
-
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [selectedStation, setSelectedStation] = useState(null);
+    const [selectedLocation, setSelectedLocation] = useState(null); // Store selected location from search
+    const [mapCenter, setMapCenter] = useState([3.1390, 101.6869]); // Kuala Lumpur default
+    const [fetchedRoutes, setFetchedRoutes] = useState([]); // Routes from backend
+    const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
     const drawerRef = useRef(null);
     const startYRef = useRef(0);
     const startPosRef = useRef(0);
@@ -113,11 +121,12 @@ const SearchRoute = () => {
             return;
         }
 
-        // setIsSearching(true); // Removed unused state setter
+        setIsSearching(true);
         try {
             console.log('Searching for:', query);
-            const response = await fetch(`http://localhost:8000/api/maps/geocode?q=${encodeURIComponent(query)}&limit=5`);
-
+            const url = buildURL(API_CONFIG.maps.geocode, { q: query, limit: 5 });
+            const response = await fetch(url);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -126,20 +135,105 @@ const SearchRoute = () => {
             console.log('Search results:', data);
 
             if (data.results && Array.isArray(data.results)) {
-                // setSearchResults(data.results); // This state was unused, so we just log for now
+                setSearchResults(data.results);
             } else {
                 console.warn('No results found or invalid response format');
-                // setSearchResults([]); // Removed unused state setter
+                setSearchResults([]);
             }
         } catch (error) {
             console.error('Error searching places:', error);
-            // setSearchResults([]); // Removed unused state setter
+            setSearchResults([]);
         } finally {
-            // setIsSearching(false); // Removed unused state setter
+            setIsSearching(false);
         }
     };
 
-    // Function to create routes based on search results
+    // NEW: Handle when user selects a location from search results
+    const handleSelectLocation = async (result) => {
+        console.log('Selected location:', result);
+        
+        // Update selected location and map center
+        setSelectedLocation(result);
+        setMapCenter([parseFloat(result.lat), parseFloat(result.lon)]);
+        setSearchQuery(result.display_name);
+        setSearchResults([]); // Close dropdown
+        
+        // Fetch real routes from backend for this location
+        await fetchRoutesForLocation(result);
+    };
+
+    // NEW: Fetch routes from backend for selected location
+    const fetchRoutesForLocation = async (location) => {
+        setIsLoadingRoutes(true);
+        try {
+            const backendRoutes = await routeService.planRoute({
+                origin: 'Current Location',
+                destination: location.display_name,
+                accessibility_priority: 'balanced',
+                optimize: 'balanced',
+                lat: parseFloat(location.lat),
+                lon: parseFloat(location.lon)
+            });
+
+            // Transform backend routes to match frontend format
+            const transformedRoutes = backendRoutes.map((route, index) => ({
+                id: index + 1,
+                type: route.mode,
+                recommended: route.accessibility_score > 90,
+                station: route.destination || location.display_name,
+                distance: `${((route.estimated_time_minutes * 0.5) || 5).toFixed(1)} km`,
+                duration: `${route.estimated_time_minutes} mins`,
+                arrivalTime: calculateArrivalTime(route.estimated_time_minutes),
+                cost: calculateCost(route.mode, route.estimated_time_minutes),
+                co2: route.estimated_co2_kg ? `${Math.round(route.estimated_co2_kg * 1000)}g` : '0g',
+                co2Label: 'Save CO₂',
+                badge: getBadgeForScore(route.accessibility_score),
+                tags: getRouteTags(route),
+                envAlert: route.co2_saved_vs_car_kg 
+                    ? `Saves ${route.co2_saved_vs_car_kg.toFixed(1)}kg CO₂ vs driving!`
+                    : 'Eco-friendly transit option'
+            }));
+
+            setFetchedRoutes(transformedRoutes);
+        } catch (error) {
+            console.error('Failed to fetch routes:', error);
+            // Use mock data as fallback
+            setFetchedRoutes(createRoutesFromSearch(location.display_name));
+        } finally {
+            setIsLoadingRoutes(false);
+        }
+    };
+
+    // Helper functions for route transformation
+    const calculateArrivalTime = (minutes) => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + minutes);
+        return now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    };
+
+    const calculateCost = (mode, minutes) => {
+        const baseCosts = { bus: 1.5, subway: 2.0, train: 2.0, mrt: 2.5 };
+        const cost = (baseCosts[mode] || 1.5) + (minutes / 60);
+        return `$${cost.toFixed(2)}`;
+    };
+
+    const getBadgeForScore = (score) => {
+        if (score >= 95) return { type: 'excellent', text: 'Excellent' };
+        if (score >= 85) return { type: 'good', text: 'Good' };
+        if (score >= 70) return { type: 'moderate', text: 'Moderate' };
+        return { type: 'bad', text: 'Limited' };
+    };
+
+    const getRouteTags = (route) => {
+        const tags = [];
+        if (route.wheelchair_accessible) tags.push('Accessible');
+        if (route.has_elevator) tags.push('Elevator');
+        if (route.audio_assistance_available) tags.push('Audio Aid');
+        if (route.estimated_co2_kg && route.estimated_co2_kg < 0.2) tags.push('Climate Friendly');
+        return tags;
+    };
+
+    // Function to create routes based on search results (fallback)
     const createRoutesFromSearch = (searchQuery) => {
         try {
             if (!searchQuery || searchQuery.trim() === '') {
@@ -166,7 +260,8 @@ const SearchRoute = () => {
         }
     };
 
-    const routes = createRoutesFromSearch(searchQuery);
+    // Use fetched routes if available, otherwise create from search query
+    const routes = fetchedRoutes.length > 0 ? fetchedRoutes : createRoutesFromSearch(searchQuery);
 
     const filteredRoutes = routes.filter(r => r.type === activeTab);
 
@@ -282,36 +377,23 @@ const SearchRoute = () => {
                 zIndex: 0,
                 pointerEvents: 'auto'  // Enable mouse interactions
             }}>
-                <OSRMMap
-                    center={[3.1390, 101.6869]} // Kuala Lumpur
-                    zoom={13}
-                    markers={[
+                <OSRMMap 
+                    center={mapCenter} // Dynamic map center based on search
+                    zoom={selectedLocation ? 15 : 13}
+                    markers={selectedLocation ? [
+                        {
+                            lat: selectedLocation.lat,
+                            lon: selectedLocation.lon,
+                            popup: selectedLocation.display_name
+                        }
+                    ] : [
                         {
                             lat: 3.1390,
                             lon: 101.6869,
                             popup: "Your Location - Kuala Lumpur"
-                        },
-                        {
-                            lat: 3.1570,
-                            lon: 101.7120,
-                            popup: "Meskel Square Station"
                         }
                     ]}
-                    routes={[
-                        {
-                            distance_m: 6500,
-                            duration_s: 1800,
-                            geometry: {
-                                type: "LineString",
-                                coordinates: [
-                                    [101.6869, 3.1390],  // Start: Kuala Lumpur (lng, lat)
-                                    [101.6950, 3.1450],  // Intermediate point
-                                    [101.7000, 3.1520],  // Intermediate point  
-                                    [101.7120, 3.1570]   // End: Meskel Square Station (lng, lat)
-                                ]
-                            }
-                        }
-                    ]}
+                    routes={[]}
                 />
             </div>
 
@@ -462,7 +544,7 @@ const SearchRoute = () => {
                     overflowX: 'hidden',
                 }}>
                     {/* Search Bar Container */}
-                    <div className="search-bar-container" style={{ marginBottom: '16px' }}>
+                    <div className="search-bar-container" style={{ marginBottom: '16px', position: 'relative' }}>
                         <div className="search-bar">
                             <MapPin
                                 color="#000000"
@@ -476,12 +558,62 @@ const SearchRoute = () => {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 style={{ fontWeight: '600', color: '#000000' }}
                             />
-                            <Search
-                                color="#000000"
-                                size={20}
-                                style={{ cursor: 'pointer' }}
-                            />
+                            {isSearching ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#6C757D' }}>
+                                    Searching...
+                                </div>
+                            ) : (
+                                <Search
+                                    color="#000000"
+                                    size={20}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                            )}
                         </div>
+                        
+                        {/* Search Results Dropdown */}
+                        {searchResults.length > 0 && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: 0,
+                                right: 0,
+                                backgroundColor: '#FFFFFF',
+                                borderRadius: '8px',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                                maxHeight: '300px',
+                                overflowY: 'auto',
+                                zIndex: 1000,
+                                marginTop: '4px'
+                            }}>
+                                {searchResults.map((result, index) => (
+                                    <div
+                                        key={index}
+                                        onClick={() => handleSelectLocation(result)}
+                                        style={{
+                                            padding: '12px 16px',
+                                            cursor: 'pointer',
+                                            borderBottom: index < searchResults.length - 1 ? '1px solid #E9ECEF' : 'none',
+                                            transition: 'background-color 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8F9FA'}
+                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <MapPin size={16} color="#054777" />
+                                            <div>
+                                                <div style={{ fontSize: '14px', fontWeight: '500', color: '#343A40' }}>
+                                                    {result.display_name}
+                                                </div>
+                                                <div style={{ fontSize: '12px', color: '#6C757D' }}>
+                                                    {result.type}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Suggested Routes Header */}
@@ -672,8 +804,25 @@ const SearchRoute = () => {
 
                     {/* Routes List */}
                     <div style={{ paddingBottom: '50px' }}>
-                        {filteredRoutes.length > 0 ? (
+                        {isLoadingRoutes ? (
+                            <div style={{ textAlign: 'center', padding: '40px', color: '#FFFFFF' }}>
+                                <div style={{ fontSize: '16px', marginBottom: '8px' }}>🔍 Finding best routes...</div>
+                                <div style={{ fontSize: '14px', color: '#CED4DA' }}>Checking accessibility & emissions</div>
+                            </div>
+                        ) : filteredRoutes.length > 0 ? (
                             <>
+                                {selectedLocation && (
+                                    <div style={{ 
+                                        marginBottom: '16px', 
+                                        padding: '12px', 
+                                        backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+                                        borderRadius: '8px',
+                                        color: '#FFFFFF',
+                                        fontSize: '14px'
+                                    }}>
+                                        📍 Showing routes to: <strong>{selectedLocation.display_name}</strong>
+                                    </div>
+                                )}
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     {filteredRoutes.map(route => (
                                         <div
@@ -681,7 +830,7 @@ const SearchRoute = () => {
                                             onClick={() => {
                                                 try {
                                                     // Store selected station data for next components
-                                                    // setSelectedStation(route); // Removed unused state setter
+                                                    setSelectedStation(route);
                                                     localStorage.setItem('selectedRoute', JSON.stringify(route));
                                                     console.log('Selected route:', route);
 
